@@ -1,10 +1,10 @@
-#ifndef TASK5_H
-#define TASK5_H
+#ifndef TASK5NTASK7_H
+#define TASK5NTASK7_H
 
 #include "task1.h" 
 #include "task2.h" 
 #include "task3.h"
-#include "task4.h"
+#include "task4Ntask6.h"
 
 
 

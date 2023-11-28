@@ -1,5 +1,5 @@
-#ifndef TASK4_H
-#define TASK4_H
+#ifndef TASK4NTASK6_H
+#define TASK4NTASK6_H
 #include <stdbool.h>
 
 #include "task1.h" 

@@ -11,7 +11,7 @@
 #include "task1.h"
 #include "task2.h"
 #include "task3.h"
-#include "task4.h"
+#include "task4Ntask6.h"
 
 
 
@@ -85,7 +85,7 @@ void displayDirectory(Directory * directory, int num, LongDirectory * longDirect
         displayDate(directory -> DIR_WrtDate);
         displayAttribute(directory -> DIR_Attr);
         printf("%10d", directory -> DIR_FileSize);
-        if (num == 0 || startingCluster == 0){
+        if (num == 0 || startingCluster == 0 || directory->DIR_Name[0] == '.'){
             printf("%7s %-10s", "", directory -> DIR_Name);
         }else{
             printf("%7s %-10s", "", resArray[*idx]);
@@ -109,7 +109,6 @@ void displayRootDirectory(BootSector * bootSector, Directory * directoryArray){
 void displaySubDirectory(BootSector * bootSector, Directory * directoryArray, int entryNum){
     int startingCluster = directoryArray[entryNum].DIR_FstClusLO + (directoryArray[entryNum].DIR_FstClusHI << 16);
     Directory * subdirectoryArray = loadSubdirectory(3, bootSector, startingCluster); 
-    //LongDirectory * longSubDirectoryArray = loadLongDirectory(subdirectoryArray, longSubDirectoryArray);
     displayRootDirectory(bootSector, subdirectoryArray);
 }
 

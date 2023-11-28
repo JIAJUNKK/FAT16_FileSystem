@@ -7,8 +7,8 @@
 #include "task1.h"
 #include "task2.h"
 #include "task3.h"
-#include "task4.h"
-#include "task5.h"
+#include "task4Ntask6.h"
+#include "task5Ntask7.h"
 
 extern File *openFile(Volume *volume, Directory * directoryArray) {
     File *file = (File *)malloc(sizeof(File));
@@ -128,17 +128,14 @@ void displaySubDirectoryFileContent(File * file, Directory * parentDirectoryArra
     int startingCluster = getStartingCluster(parentDirectoryArray[directoryIndex].DIR_FstClusLO, parentDirectoryArray[directoryIndex].DIR_FstClusHI);
     Directory *subdirectoryArray = loadSubdirectory(file->fd, file->volume->bootSector, startingCluster);
     Directory sub = subdirectoryArray[choice];
-
     int fileSize = sub.DIR_FileSize;
     int clusterSize = file->volume->bootSector->BPB_SecPerClus * file->volume->bootSector->BPB_BytsPerSec;
     int startCluster = getStartingCluster(sub.DIR_FstClusLO, sub.DIR_FstClusHI);   
     printf("\n\n\n\n\n");
-
     if (startCluster > 0 && startCluster <= 0xfff8){
         displayFileContent(file, fileSize, clusterSize, startCluster, isSubDirectory);
         printf("\n");
     }
-    
     if (sub.DIR_Attr == 0x10){
         Directory *subdirectoryArray = loadSubdirectory(file->fd, file->volume->bootSector, startingCluster);
         displaySubDirectory(file->volume->bootSector, subdirectoryArray, choice);
