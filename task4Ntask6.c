@@ -88,6 +88,8 @@ void displayDirectory(Directory * directory, int num, LongDirectory * longDirect
         if (num == 0 || startingCluster == 0 || directory->DIR_Name[0] == '.'){
             printf("%7s %-10s", "", directory -> DIR_Name);
         }else{
+            printf("%7s %-10s", "", directory -> DIR_Name);
+
             printf("%7s %-10s", "", resArray[*idx]);
             (*idx)++;
         }
@@ -95,7 +97,7 @@ void displayDirectory(Directory * directory, int num, LongDirectory * longDirect
     }
 }
 
-void displayRootDirectory(BootSector * bootSector, Directory * directoryArray){
+void displayDirectoryDetails(BootSector * bootSector, Directory * directoryArray){
     LongDirectory * longDirectoryArray = loadLongDirectory(directoryArray, longDirectoryArray);
     int idx = 0;
     printf("\n\n\n\n\nDirectoryNumber | Starting Cluster | Last Modified Time | Last Modified Date | Attribute | File Length | File Name\n");
@@ -105,11 +107,10 @@ void displayRootDirectory(BootSector * bootSector, Directory * directoryArray){
     }
     idx = 0;
 }
-
 void displaySubDirectory(BootSector * bootSector, Directory * directoryArray, int entryNum){
     int startingCluster = directoryArray[entryNum].DIR_FstClusLO + (directoryArray[entryNum].DIR_FstClusHI << 16);
     Directory * subdirectoryArray = loadSubdirectory(3, bootSector, startingCluster); 
-    displayRootDirectory(bootSector, subdirectoryArray);
+    displayDirectoryDetails(bootSector, subdirectoryArray);
 }
 
 
@@ -130,12 +131,11 @@ LongDirectory *loadLongDirectory(Directory *directoryArray, LongDirectory * long
     return longDirectoryArray;
 }
 
-
 char ** displayLongDirectory(LongDirectory *longDirectoryArray) {
-    char **resArray = (char **)malloc(100 * sizeof(char *)); // Allocate memory for an array of char pointers
+    char **resArray = (char **)malloc(100 * sizeof(char *));
     for (int i = 0; i < 100; ++i) {
-        resArray[i] = (char *)malloc(256 * sizeof(char)); // Allocate memory for each string
-        resArray[i][0] = '\0'; // Initialize each string to an empty string
+        resArray[i] = (char *)malloc(256 * sizeof(char)); 
+        resArray[i][0] = '\0'; 
     }
 
     int resIndex = 0;
@@ -199,11 +199,7 @@ char ** displayLongDirectory(LongDirectory *longDirectoryArray) {
 
         strcpy(resArray[resIndex], reversedTempArray);
         resIndex++;
-    }
-    for (int i = 0; i < resIndex; i++){
-        //printf("LongFileName: %s\n", resArray[i]);
-    }
-
+    }    
     return resArray;
 
 }
@@ -211,19 +207,3 @@ char ** displayLongDirectory(LongDirectory *longDirectoryArray) {
 
 
 
-
-/*
-    if (subdirectoryArray[i].DIR_Attr == 0x10 && subdirectoryArray[i].DIR_Name[0] != '.' ){
-    int startingCluster = subdirectoryArray[i].DIR_FstClusLO + (subdirectoryArray[i].DIR_FstClusHI << 16);
-    Directory * subdirectoryArray2 = loadSubdirectory(3, bootSector, startingCluster); 
-    LongDirectory * longSubDirectoryArray2 = loadLongDirectory(subdirectoryArray2, longSubDirectoryArray2);
-    int idx = 0;
-    printf("\n\n\n\n\nDirectory Number | Starting Cluster | Last Modified Time | Last Modified Date | Attribute | File Length | File Name\n");
-    printf("-------------------------------------------------------------------------------------------------------------------\n");
-    for (int i =0; i < bootSector -> BPB_RootEntCnt / sizeof(subdirectoryArray2); i++){
-        displayDirectory(&subdirectoryArray2[i], totalValidEntries, longSubDirectoryArray2, &idx);
-        totalValidEntries++;
-
-    }
-    }
-*/

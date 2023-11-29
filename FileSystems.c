@@ -44,30 +44,25 @@ int main(){
 //TASK 3
     fat_array = loadFATtoMemory(fd, fat_array, bootSector);
 
-    
+    /*
     for (int i = 0; i < 100; i++){
         printf("%d\n", fat_array[i]);
     }
+    */
     
-    displayOrderedClusterList(2, fat_array);
+    displayOrderedClusterList(148, fat_array);
 
 //Task 4
     lseek(fd, 0, SEEK_SET);
     directoryArray = loadRootDirectory(fd, bootSector, directoryArray);
 
-    
-    for (int i = 0; i < 10; i++){
-        printf("%s", directoryArray[i].DIR_Name);
-    }
 
-    printf("\n");
-    displayRootDirectory(bootSector, directoryArray);
+    displayDirectoryDetails(bootSector, directoryArray);
     
 
 //TASK 5 
-    Volume * volume;
-    volume -> bootSector = bootSector;
-        
+    Volume *volume = malloc(sizeof(Volume));
+    volume->bootSector = bootSector;
     File * file = openFile(volume, directoryArray);
     file -> fd = fd; 
     while (true){
@@ -77,7 +72,7 @@ int main(){
         }
         displayRootDirectoryContent(file, rootChoice);
         printf("\n\n\n\n\n");
-        displayRootDirectory(bootSector, directoryArray);
+        displayDirectoryDetails(bootSector, directoryArray);
     }
     closeFile(file);
 

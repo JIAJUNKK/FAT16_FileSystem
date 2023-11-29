@@ -48,7 +48,7 @@ void displayDate(uint16_t date);
 void displayAttribute(uint16_t attribute);
 bool validFileName(uint8_t * directoryName);
 void displayDirectory(Directory * directory, int num, LongDirectory * longDirectoryArray, int * idx);
-void displayRootDirectory(BootSector * bootSector, Directory * directoryArrays);
+void displayDirectoryDetails(BootSector * bootSector, Directory * directoryArrays);
 void displaySubDirectory(BootSector * bootSector, Directory * directoryArray, int entryNum);
 
 LongDirectory *loadLongDirectory(Directory *directoryArray, LongDirectory * longDirectoryArray);
