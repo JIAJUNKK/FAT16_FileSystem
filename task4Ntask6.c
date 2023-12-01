@@ -152,13 +152,16 @@ void displayDirectory(Directory * directory, int num, LongDirectory * longDirect
 void displayDirectoryDetails(BootSector * bootSector, Directory * directoryArray){
     LongDirectory * longDirectoryArray = loadLongDirectory(directoryArray, longDirectoryArray);
     int idx = 0;
-    printf("\n\n\n\n\nStarting | Last Modified | Last Modified | Attribute | File   | File Name\n"
-                     "Cluster  | Time          | Date          |           | Length |            ");
+    printf("\n\n\n\n\n");
+    printf("----------------------------------------------------------------------------------------------------------------------------\n");
+     printf("Starting | Last Modified | Last Modified | Attribute | File   |                          File Name                         \n"
+            "Cluster  | Time          | Date          |           | Length |                                                             ");
     printf("\n----------------------------------------------------------------------------------------------------------------------------\n");
     for (int i = 0; i <bootSector->BPB_SecPerClus * bootSector->BPB_BytsPerSec / sizeof(Directory); i ++){
         displayDirectory(&directoryArray[i], i, longDirectoryArray, &idx);
     }
     idx = 0;
+    free(longDirectoryArray);
 }
 
 
@@ -168,6 +171,7 @@ void displaySubDirectory(BootSector *bootSector, Directory *directoryArray, int 
         Directory *subdirectoryArray = loadSubdirectory(3, bootSector, startingCluster);  
         startingCluster = fat_array[startingCluster];
         displayDirectoryDetails(bootSector, subdirectoryArray);
+        free(subdirectoryArray);
     }
 }
 
@@ -178,7 +182,6 @@ LongDirectory *loadLongDirectory(Directory *directoryArray, LongDirectory * long
     int longDirIndex = 0;
 
     for (int i = 0; i < numDirEntries; i++) {
-    
         if (directoryArray[i].DIR_Attr == 0x0f){
             memcpy(&longDirectoryArray[longDirIndex], &directoryArray[i], sizeof(LongDirectory));
             longDirIndex++;

@@ -72,9 +72,9 @@ int choiceRootDirectory(){
         printf("----------------------------------------------------------------------------------------------------------------------------\n");
         printf("Select a file\n");
         printf("Enter -1 to exit\n");
-        printf("FOR EXAMPLE, IF YOU WANT TO READ THE SESSIONS.TXT FILE, enter the CLUSTER NUMBER 2457\n");
+        printf("FOR EXAMPLE, IF YOU WANT TO READ THE SESSIONS.TXT FILE, enter the STARTING CLUSTER NUMBER 2457\n");
         printf("----------------------------------------------------------------------------------------------------------------------------\n");
-        printf("Your choice: ");
+        printf("Enter a valid starting cluster number: ");
         scanf("%d", &choice);
     }
     return choice;
@@ -155,7 +155,8 @@ void displaySubDirectoryFileContent(File * file, Directory * parentDirectoryArra
                 }
             }
         }
-        startingCluster = fat_array[startingCluster];
+        startingCluster = fat_array[startingCluster];    
+        free(subdirectoryArray);
     }
 }
 
@@ -166,12 +167,23 @@ int choiceSubDirectory(){
         printf("YOU HAVE OPEN A FOLDER!!!");
         printf("Select a file\n");
         printf("Select -1 to go back to ROOT DIRECTORY\n");
-        printf("FOR EXAMPLE, IF YOU WANT TO OPEN THE FOLDER MAN 2, ENTER THE CLUSTER NUMBER 5\n");
-        printf("FOR EXAMPLE, IF YOU WANT TO READ THE MIDDLEMATCH.TXT, ENTER THE CLUSTER NUMBER 1545\n");
-        printf("FOR EXAMPLE, IF YOU WANT TO READ THE WRITE.2, ENTER THE CLUSTER NUMBER 1336\n");
+        printf("FOR EXAMPLE, IF YOU WANT TO OPEN THE FOLDER MAN 2, ENTER THE STARTING CLUSTER NUMBER 5\n");
+        printf("FOR EXAMPLE, IF YOU WANT TO READ THE MIDDLEMATCH.TXT, ENTER THE STARTING CLUSTER NUMBER 1545\n");
+        printf("FOR EXAMPLE, IF YOU WANT TO READ THE WRITE.2, ENTER THE STARTING CLUSTER NUMBER 1336\n");
         printf("----------------------------------------------------------------------------------------------------------------------------\n");
-        printf("Your choice: ");
+        printf("Enter a valid starting cluster number: ");
         scanf("%d", &choice);
     }
     return choice;
 }
+
+/*
+
+  ___ _   ___     ___    _     ___ ____  
+ |_ _| \ | \ \   / / \  | |   |_ _|  _ \ 
+  | ||  \| |\ \ / / _ \ | |    | || | | |
+  | || |\  | \ V / ___ \| |___ | || |_| |
+ |___|_| \_|  \_/_/   \_|_____|___|____/ 
+                                         
+
+*/

@@ -57,25 +57,23 @@ int main(){
     displayDirectoryDetails(bootSector, directoryArray);
     
 
-//TASK 5 and Task 5
+//TASK 5 and Task 7
     Volume *volume = malloc(sizeof(Volume));
     volume->bootSector = bootSector;
     File * file = openFile(volume, directoryArray);
     file -> fd = fd; 
     while (true){
-        int rootChoice = choiceRootDirectory();
-        if (rootChoice == -1){
+        int rootChoiceStartingCluster = choiceRootDirectory();
+        if (rootChoiceStartingCluster == -1){
             break;
         }
-        displayRootDirectoryContent(file, rootChoice);
+        displayRootDirectoryContent(file, rootChoiceStartingCluster);
         printf("\n\n\n\n\n");
         displayDirectoryDetails(bootSector, directoryArray);
     }
     closeFile(file);
-
     close(fd);
     return 0;
-
 }
 
 
