@@ -24,14 +24,66 @@ Directory * loadRootDirectory(int fd, BootSector * bootSector, Directory * direc
     return directoryArray;
 }
 
+
+
 Directory *loadSubdirectory(int fd, BootSector *bootSector, int clusterNumber) {
     int directoryMemSize = bootSector->BPB_SecPerClus * bootSector->BPB_BytsPerSec;
-    int FirstDataSector = bootSector->BPB_RsvdSecCnt + (bootSector->BPB_NumFATs * bootSector->BPB_FATSz16) + bootSector->BPB_RootEntCnt / (bootSector->BPB_BytsPerSec / sizeof(Directory));
-    int startingSector = FirstDataSector + (clusterNumber - 2) * bootSector -> BPB_SecPerClus;
-    Directory *subdirectoryArray = (Directory *)malloc(directoryMemSize);
-    loadMemory(fd, subdirectoryArray, directoryMemSize, startingSector * bootSector->BPB_BytsPerSec);
+    Directory *subdirectoryArray = (Directory *)malloc(directoryMemSize); // Start with space for multiple clusters
+    Directory *currentSubdirectory = subdirectoryArray;
+    int currentCluster = clusterNumber;
+    int offset = 1;
+    int totalEntries = directoryMemSize / sizeof(Directory);
+    int clustersLoaded = 1; 
+
+    while (currentCluster <= 0xfff8 && currentCluster > 0) {
+        int FirstDataSector = bootSector->BPB_RsvdSecCnt + (bootSector->BPB_NumFATs * bootSector->BPB_FATSz16) + ((bootSector->BPB_RootEntCnt * sizeof(Directory)) + (bootSector->BPB_BytsPerSec - 1)) / bootSector->BPB_BytsPerSec;
+        int startingSector = FirstDataSector + (currentCluster - 2) * bootSector->BPB_SecPerClus;
+        if (offset > clustersLoaded * totalEntries) {
+            clustersLoaded += 3; 
+            subdirectoryArray = (Directory *)realloc(subdirectoryArray, directoryMemSize * clustersLoaded);
+            currentSubdirectory = subdirectoryArray + offset;
+        }
+        loadMemory(fd, currentSubdirectory, directoryMemSize, startingSector * bootSector->BPB_BytsPerSec);
+        offset += totalEntries;
+        currentCluster = fat_array[currentCluster];
+    }
     return subdirectoryArray;
 }
+
+
+
+
+/*
+Directory *loadSubdirectory(int fd, BootSector *bootSector, int clusterNumber) {
+    int directoryMemSize = bootSector->BPB_SecPerClus * bootSector->BPB_BytsPerSec;
+    Directory *subdirectoryArray = (Directory *)malloc(directoryMemSize);
+    Directory *currentSubdirectory = subdirectoryArray;
+
+    int currentCluster = clusterNumber;
+    while (currentCluster <= 0xfff8 && currentCluster > 0) {
+        int FirstDataSector = bootSector->BPB_RsvdSecCnt + (bootSector->BPB_NumFATs * bootSector->BPB_FATSz16) + ((bootSector->BPB_RootEntCnt * sizeof(Directory)) + (bootSector->BPB_BytsPerSec - 1)) / bootSector->BPB_BytsPerSec;
+        int startingSector = FirstDataSector + (currentCluster - 2) * bootSector -> BPB_SecPerClus;
+        printf("Debug: currentCluster: %d\n", currentCluster);
+        printf("Debug: FirstDataSector: %d\n", FirstDataSector);
+        printf("Debug: startingSector: %d\n", startingSector);
+        loadMemory(fd, currentSubdirectory, directoryMemSize, startingSector * bootSector->BPB_BytsPerSec);
+        currentCluster = fat_array[currentCluster];
+
+        printf("Debug: After loadMemory - currentCluster: %d\n", currentCluster);
+
+        if (currentCluster > 0xfff8) {
+            printf("This is the end cluster: %d\n", currentCluster);
+            break;
+        }
+        //currentSubdirectory ++;
+        currentSubdirectory += directoryMemSize / sizeof(Directory); // Move by the size of loaded data
+    }
+
+    return subdirectoryArray;
+}
+*/
+
+
 
 int getStartingCluster(uint16_t lowCluster, uint16_t highCluster) {
     int startingCluster = lowCluster | (highCluster << 16);
@@ -50,13 +102,13 @@ void displayTime(uint16_t time) {
     int hour = (time >> 11) & 0x1F;           
     int minute = (time >> 5) & 0x3F;         
     int second = (time & 0x1F) * 2;
-    printf("%15s %02d:%02d:%02d", "", hour, minute, second);
+    printf("%2s %02d:%02d:%02d %4s", "", hour, minute, second, "|");
 }
 void displayDate(uint16_t date) {
     int year = ((date >> 9) & 0x7F) + 1980;
     int month = (date >> 5) & 0x0F;           
     int day = date & 0x1F; 
-    printf("%12s %02d/%02d/%02d", "", year, month, day);        
+    printf("%s %02d/%02d/%02d %4s", "", year, month, day, "|");        
 }
 void displayAttribute(uint16_t attribute){
     char array[7] = "-------";
@@ -66,7 +118,8 @@ void displayAttribute(uint16_t attribute){
     array[3] = (attribute>>3 & 1) ? 'V' : '-'; 
     array[2] = (attribute & 0x10) ? 'D' : '-'; 
     array[1] = (attribute & 0x20) ? 'A' : '-'; 
-    printf("%4s %11s", "", array);
+    printf("%9s %2s", array, "|");
+    
 }
 bool validFileName(uint8_t * directoryName){
     if (directoryName[0] == 0x00 || directoryName[0] == 0xE5){
@@ -77,63 +130,68 @@ bool validFileName(uint8_t * directoryName){
 
 void displayDirectory(Directory * directory, int num, LongDirectory * longDirectoryArray, int *idx){
     char ** resArray = displayLongDirectory(longDirectoryArray);
+    
     int startingCluster = getStartingCluster(directory -> DIR_FstClusLO, directory -> DIR_FstClusHI);
     if (validCluster(startingCluster) && validFileName(directory -> DIR_Name) && directory -> DIR_FileSize != -1){
-        printf("%-10d", num);
-        printf("%15d", getStartingCluster(directory -> DIR_FstClusLO, directory -> DIR_FstClusHI));
+        printf("%5d %4s", getStartingCluster(directory -> DIR_FstClusLO, directory -> DIR_FstClusHI), "|");
         displayTime(directory -> DIR_WrtTime);
         displayDate(directory -> DIR_WrtDate);
         displayAttribute(directory -> DIR_Attr);
-        printf("%10d", directory -> DIR_FileSize);
+        printf("%5d %3s", directory -> DIR_FileSize, "|");
         if (num == 0 || startingCluster == 0 || directory->DIR_Name[0] == '.'){
-            printf("%7s %-10s", "", directory -> DIR_Name);
+            printf("%3s %-10s", "", directory -> DIR_Name);
         }else{
-            printf("%7s %-10s", "", directory -> DIR_Name);
-
-            printf("%7s %-10s", "", resArray[*idx]);
+            printf("%3s %-10s", "", resArray[*idx]);
             (*idx)++;
         }
         printf("\n");
+        printf("----------------------------------------------------------------------------------------------------------------------------\n");
     }
 }
 
 void displayDirectoryDetails(BootSector * bootSector, Directory * directoryArray){
     LongDirectory * longDirectoryArray = loadLongDirectory(directoryArray, longDirectoryArray);
     int idx = 0;
-    printf("\n\n\n\n\nDirectoryNumber | Starting Cluster | Last Modified Time | Last Modified Date | Attribute | File Length | File Name\n");
-    printf("-------------------------------------------------------------------------------------------------------------------\n");
-    for (int i = 0; i < bootSector -> BPB_RootEntCnt; i ++){
+    printf("\n\n\n\n\nStarting | Last Modified | Last Modified | Attribute | File   | File Name\n"
+                     "Cluster  | Time          | Date          |           | Length |            ");
+    printf("\n----------------------------------------------------------------------------------------------------------------------------\n");
+    for (int i = 0; i <bootSector->BPB_SecPerClus * bootSector->BPB_BytsPerSec / sizeof(Directory); i ++){
         displayDirectory(&directoryArray[i], i, longDirectoryArray, &idx);
     }
     idx = 0;
 }
-void displaySubDirectory(BootSector * bootSector, Directory * directoryArray, int entryNum){
-    int startingCluster = directoryArray[entryNum].DIR_FstClusLO + (directoryArray[entryNum].DIR_FstClusHI << 16);
-    Directory * subdirectoryArray = loadSubdirectory(3, bootSector, startingCluster); 
-    displayDirectoryDetails(bootSector, subdirectoryArray);
-}
 
+
+void displaySubDirectory(BootSector *bootSector, Directory *directoryArray, int entryNum) {
+    int startingCluster = entryNum;
+    while (startingCluster <= 0xfff8 && startingCluster > 0){
+        Directory *subdirectoryArray = loadSubdirectory(3, bootSector, startingCluster);  
+        startingCluster = fat_array[startingCluster];
+        displayDirectoryDetails(bootSector, subdirectoryArray);
+    }
+}
 
 //TASK 6
 LongDirectory *loadLongDirectory(Directory *directoryArray, LongDirectory * longDirectoryArray){
-    int numDirEntries = bootSector -> BPB_BytsPerSec;
-    longDirectoryArray = (LongDirectory*)malloc(sizeof(LongDirectory) * numDirEntries);
+    int numDirEntries = bootSector->BPB_SecPerClus * bootSector->BPB_BytsPerSec;
+    longDirectoryArray = (LongDirectory *)malloc(numDirEntries * sizeof(LongDirectory));
     int longDirIndex = 0;
 
     for (int i = 0; i < numDirEntries; i++) {
-        if (directoryArray[i].DIR_Name[0] == 0) break;
-        if (directoryArray[i].DIR_Attr == 15) {
+    
+        if (directoryArray[i].DIR_Attr == 0x0f){
             memcpy(&longDirectoryArray[longDirIndex], &directoryArray[i], sizeof(LongDirectory));
             longDirIndex++;
-        }
-
+        } 
     }
     return longDirectoryArray;
 }
 
 char ** displayLongDirectory(LongDirectory *longDirectoryArray) {
-    char **resArray = (char **)malloc(100 * sizeof(char *));
-    for (int i = 0; i < 100; ++i) {
+    int numDirEntries = bootSector->BPB_SecPerClus * bootSector->BPB_BytsPerSec;
+
+    char **resArray = (char **)malloc(numDirEntries * sizeof(char *));
+    for (int i = 0; i < numDirEntries; ++i) {
         resArray[i] = (char *)malloc(256 * sizeof(char)); 
         resArray[i][0] = '\0'; 
     }
@@ -142,7 +200,7 @@ char ** displayLongDirectory(LongDirectory *longDirectoryArray) {
     char tempArray[256];
     int tempIndex = 0;
 
-    for (int i = 0; i < bootSector -> BPB_FATSz16; i++) {
+    for (int i = 0; i < numDirEntries; i++) {
         if (longDirectoryArray[i].LDIR_Ord & 0x40) {
             if (tempIndex > 0) {
                 char reversedTempArray[256];

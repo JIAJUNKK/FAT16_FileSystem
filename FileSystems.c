@@ -20,6 +20,7 @@ uint16_t * fat_array;
 Directory directory;
 LongDirectory Ldirectory;
 
+File * file;
 
 int main(){
     ssize_t readFile;
@@ -43,24 +44,20 @@ int main(){
 
 //TASK 3
     fat_array = loadFATtoMemory(fd, fat_array, bootSector);
-
     /*
-    for (int i = 0; i < 100; i++){
+    for (int i = 5; i < 130; i++){
         printf("%d\n", fat_array[i]);
     }
     */
-    
-    displayOrderedClusterList(148, fat_array);
+    displayOrderedClusterList(5, fat_array);
 
-//Task 4
+//Task 4 and Task 6
     lseek(fd, 0, SEEK_SET);
     directoryArray = loadRootDirectory(fd, bootSector, directoryArray);
-
-
     displayDirectoryDetails(bootSector, directoryArray);
     
 
-//TASK 5 
+//TASK 5 and Task 5
     Volume *volume = malloc(sizeof(Volume));
     volume->bootSector = bootSector;
     File * file = openFile(volume, directoryArray);
@@ -76,10 +73,6 @@ int main(){
     }
     closeFile(file);
 
-
-//TASK 6
-
-    
     close(fd);
     return 0;
 

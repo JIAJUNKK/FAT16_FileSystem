@@ -69,11 +69,11 @@ char * getClusterBytes(File * file, int startCluster, size_t length, bool isSubD
 int choiceRootDirectory(){
     int choice = -2;
     while (choice == -2){
-        printf("-------------------------------------------------------------------------------------------------------------------\n");
+        printf("----------------------------------------------------------------------------------------------------------------------------\n");
         printf("Select a file\n");
         printf("Enter -1 to exit\n");
-        printf("FOR EXAMPLE, IF YOU WANT TO READ THE SESSIONS.TXT FILE, enter the directory number 18\n");
-        printf("-------------------------------------------------------------------------------------------------------------------\n");
+        printf("FOR EXAMPLE, IF YOU WANT TO READ THE SESSIONS.TXT FILE, enter the CLUSTER NUMBER 2457\n");
+        printf("----------------------------------------------------------------------------------------------------------------------------\n");
         printf("Your choice: ");
         scanf("%d", &choice);
     }
@@ -101,23 +101,26 @@ void displayFileContent(File * file, size_t length, int clusterSize, int startCl
 
 void displayRootDirectoryContent(File * file, int choice) {
     bool isSubDirectory = false; 
-    Directory dir = file -> directoryArray[choice];
-    if (dir.DIR_Attr == 0x10){
-        displaySubDirectory(file -> volume -> bootSector, file -> directoryArray, choice);
-
-        isSubDirectory = true; 
-        int choiceSub = choiceSubDirectory();
-        if (choiceSub == -1){
-            return;
+    for (int i = 0; i < bootSector->BPB_SecPerClus * bootSector->BPB_BytsPerSec / sizeof(Directory); i++){
+        Directory dir = file -> directoryArray[i];
+        if (choice == getStartingCluster(dir.DIR_FstClusLO, dir.DIR_FstClusHI)){
+            size_t fileSize = dir.DIR_FileSize;
+            int clusterSize = file -> volume -> bootSector->BPB_SecPerClus * file -> volume -> bootSector->BPB_BytsPerSec;
+            int startCluster = getStartingCluster(dir.DIR_FstClusLO, dir.DIR_FstClusHI) - 2;
+            if (startCluster > 0 && startCluster <= 0xfff8){
+                displayFileContent(file, fileSize, clusterSize, startCluster, isSubDirectory);
+            }
+            if(dir.DIR_Attr ==0x10){
+                int startCluster = getStartingCluster(dir.DIR_FstClusLO, dir.DIR_FstClusHI);
+                displaySubDirectory(file -> volume -> bootSector, file -> directoryArray, startCluster);
+                isSubDirectory = true; 
+                int choiceSub = choiceSubDirectory();
+                if (choiceSub == -1){
+                    return;
+                }
+                displaySubDirectoryFileContent(file, file -> directoryArray, choice, choiceSub, isSubDirectory);
+            }
         }
-        displaySubDirectoryFileContent(file, file -> directoryArray, choice, choiceSub, isSubDirectory);
-    }
-
-    size_t fileSize = dir.DIR_FileSize;
-    int clusterSize = file -> volume -> bootSector->BPB_SecPerClus * file -> volume -> bootSector->BPB_BytsPerSec;
-    int startCluster = getStartingCluster(dir.DIR_FstClusLO, dir.DIR_FstClusHI) - 2;
-    if (startCluster > 0 && startCluster <= 0xfff8){
-        displayFileContent(file, fileSize, clusterSize, startCluster, isSubDirectory);
     }
 }
 
@@ -127,37 +130,46 @@ off_t calculateSubdirectoryOffset(File * file, int clusterNumber) {
     int startingSector = FirstDataSector + (clusterNumber - 2) *  file -> volume -> bootSector->BPB_SecPerClus;
     return startingSector *  file -> volume -> bootSector->BPB_BytsPerSec;
 }
-void displaySubDirectoryFileContent(File * file, Directory * parentDirectoryArray, int directoryIndex, int choice, bool isSubDirectory){
-    int startingCluster = getStartingCluster(parentDirectoryArray[directoryIndex].DIR_FstClusLO, parentDirectoryArray[directoryIndex].DIR_FstClusHI);
-    Directory *subdirectoryArray = loadSubdirectory(file->fd, file->volume->bootSector, startingCluster);
-    Directory sub = subdirectoryArray[choice];
-    int fileSize = sub.DIR_FileSize;
-    int clusterSize = file->volume->bootSector->BPB_SecPerClus * file->volume->bootSector->BPB_BytsPerSec;
-    int startCluster = getStartingCluster(sub.DIR_FstClusLO, sub.DIR_FstClusHI);   
-    printf("\n\n\n\n\n");
-    if (startCluster > 0 && startCluster <= 0xfff8){
-        displayFileContent(file, fileSize, clusterSize, startCluster, isSubDirectory);
-    }
-
-    if (sub.DIR_Attr == 0x10){
+void displaySubDirectoryFileContent(File * file, Directory * parentDirectoryArray, int parentStartCluster, int selfStartCluster, bool isSubDirectory){
+    int startingCluster = parentStartCluster;    
+    while (startingCluster <= 0xfff8 && startingCluster > 0){
         Directory *subdirectoryArray = loadSubdirectory(file->fd, file->volume->bootSector, startingCluster);
-        displaySubDirectory(file->volume->bootSector, subdirectoryArray, choice);
-        int choiceSub = choiceSubDirectory();
-        if (choiceSub == -1){
-            return;
+        for (int i = 0; i < bootSector->BPB_SecPerClus * bootSector->BPB_BytsPerSec / sizeof(Directory); i++){
+            Directory sub = subdirectoryArray[i];
+            if (selfStartCluster == getStartingCluster(sub.DIR_FstClusLO, sub.DIR_FstClusHI)){
+                int fileSize = sub.DIR_FileSize;
+                int clusterSize = file->volume->bootSector->BPB_SecPerClus * file->volume->bootSector->BPB_BytsPerSec;
+                int startCluster = getStartingCluster(sub.DIR_FstClusLO, sub.DIR_FstClusHI);   
+                printf("\n\n\n\n\n");
+                if (startCluster > 0 && startCluster <= 0xfff8){
+                    displayFileContent(file, fileSize, clusterSize, startCluster, isSubDirectory);
+                }
+                if (sub.DIR_Attr == 0x10){
+                    Directory *subdirectoryArray = loadSubdirectory(file->fd, file->volume->bootSector, startingCluster);
+                    displaySubDirectory(file->volume->bootSector, subdirectoryArray, selfStartCluster);
+                    int choiceSub = choiceSubDirectory();
+                    if (choiceSub == -1){
+                        return;
+                    }
+                    displaySubDirectoryFileContent(file, subdirectoryArray, selfStartCluster, choiceSub, isSubDirectory);
+                }
+            }
         }
-        displaySubDirectoryFileContent(file, subdirectoryArray, choice, choiceSub, isSubDirectory);
+        startingCluster = fat_array[startingCluster];
     }
 }
+
 int choiceSubDirectory(){
     int choice = -2;
     while (choice == -2){
-        printf("-------------------------------------------------------------------------------------------------------------------\n");
+        printf("----------------------------------------------------------------------------------------------------------------------------\n");
         printf("YOU HAVE OPEN A FOLDER!!!");
         printf("Select a file\n");
         printf("Select -1 to go back to ROOT DIRECTORY\n");
-        printf("FOR EXAMPLE, IF YOU WANT TO READ THE MIDDLEMATCH.TXT, ENTER THE DIRECTORY NUMBER 7\n");
-        printf("-------------------------------------------------------------------------------------------------------------------\n");
+        printf("FOR EXAMPLE, IF YOU WANT TO OPEN THE FOLDER MAN 2, ENTER THE CLUSTER NUMBER 5\n");
+        printf("FOR EXAMPLE, IF YOU WANT TO READ THE MIDDLEMATCH.TXT, ENTER THE CLUSTER NUMBER 1545\n");
+        printf("FOR EXAMPLE, IF YOU WANT TO READ THE WRITE.2, ENTER THE CLUSTER NUMBER 1336\n");
+        printf("----------------------------------------------------------------------------------------------------------------------------\n");
         printf("Your choice: ");
         scanf("%d", &choice);
     }

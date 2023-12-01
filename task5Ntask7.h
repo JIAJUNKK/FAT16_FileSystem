@@ -29,7 +29,7 @@ char * getClusterBytes(File * file, int startCluster, size_t length, bool isSubD
 int choiceRootDirectory();
 int choiceSubDirectory();
 void displayFileContent(File * file, size_t length, int clusterSize, int startCluster, bool isSubDirectory);
-void displaySubDirectoryFileContent(File * file, Directory * parentDirectoryArray, int directoryIndex, int choice, bool isSubDirectory);
+void displaySubDirectoryFileContent(File * file, Directory * parentDirectoryArray, int parentStartCluster, int selfStartCluster, bool isSubDirectory);
 void displayRootDirectoryContent(File * file, int choice);
 
 

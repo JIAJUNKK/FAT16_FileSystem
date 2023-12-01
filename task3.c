@@ -27,7 +27,7 @@ uint16_t * loadFATtoMemory(int fd, uint16_t * fat_array, BootSector * bootSector
 }
 void displayOrderedClusterList(uint16_t startingCluster, uint16_t * fat_array){
     uint16_t currentCluster = startingCluster;
-    while (currentCluster < 0xfff8){
+    while (currentCluster <= 0xfff8){
         printf("Current Cluster: %d\n", currentCluster);
         currentCluster = fat_array[currentCluster];
     }

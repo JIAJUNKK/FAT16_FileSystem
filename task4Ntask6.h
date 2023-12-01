@@ -51,6 +51,8 @@ void displayDirectory(Directory * directory, int num, LongDirectory * longDirect
 void displayDirectoryDetails(BootSector * bootSector, Directory * directoryArrays);
 void displaySubDirectory(BootSector * bootSector, Directory * directoryArray, int entryNum);
 
+int countEntriesInCluster(BootSector *bootSector, int clusterNumber);
+
 LongDirectory *loadLongDirectory(Directory *directoryArray, LongDirectory * longDirectoryArray);
 char ** displayLongDirectory(LongDirectory *longDirectoryArray);
 char * extractLongFileName(LongDirectory * longDirectoryArray, int i, int index);
